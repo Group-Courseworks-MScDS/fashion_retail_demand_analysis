@@ -5,12 +5,13 @@ Retail product demand analysis using ETL, EDA, clustering, and forecasting to ge
 
 ### 1. Clone Repository
 git clone [git@github.com:JanakaUPerera/fashion_retail_demand_analysis.git](https://github.com/JanakaUPerera/fashion_retail_demand_analysis.git)
-Open the repository
 
-### 2. Create Virtual Environment
+### 2. Open the repository on your IDE
+
+### 3. Create Virtual Environment
 python -m venv venv
 
-### 3. Activate Environment
+### 4. Activate Environment
 
 #### Windows
 venv\Scripts\activate
@@ -18,5 +19,5 @@ venv\Scripts\activate
 #### Mac/Linux
 source venv/bin/activate
 
-### 4. Install Dependencies
+### 5. Install Dependencies
 pip install -r requirements.txt
