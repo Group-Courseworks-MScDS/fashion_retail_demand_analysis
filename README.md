@@ -2,9 +2,8 @@
 Retail product demand analysis using ETL, EDA, clustering, and forecasting to generate data-driven operational insights. MSc Data Science – Principles of Data Science coursework project.
 
 # Setup Instructions
-
 ### 1. Clone Repository
-git clone [git@github.com:JanakaUPerera/fashion_retail_demand_analysis.git](https://github.com/JanakaUPerera/fashion_retail_demand_analysis.git)
+git clone https://github.com/Group-Courseworks-MScDS/fashion_retail_demand_analysis.git
 
 ### 2. Open the repository on your IDE
 
@@ -12,10 +11,8 @@ git clone [git@github.com:JanakaUPerera/fashion_retail_demand_analysis.git](http
 python -m venv venv
 
 ### 4. Activate Environment
-
 #### Windows
 venv\Scripts\activate
-
 #### Mac/Linux
 source venv/bin/activate
 
