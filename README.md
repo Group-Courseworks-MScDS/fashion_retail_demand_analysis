@@ -18,3 +18,6 @@ source venv/bin/activate
 
 ### 5. Install Dependencies
 pip install -r requirements.txt
+
+### 6. Execute the workflow
+python .\main.py
