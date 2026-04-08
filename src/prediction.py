@@ -302,6 +302,233 @@ def save_metrics(metrics: dict[str, dict[str, float]], output_path: Path) -> Non
     logger.info("Saved metrics to: %s", output_path)
 
 
+def save_predictions(
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    y_pred: pd.Series,
+    output_path: Path,
+) -> pd.DataFrame:
+    """
+    Save actual vs predicted values.
+
+    Args:
+        X_test: Test feature set.
+        y_test: Actual target values.
+        y_pred: Predicted target values.
+        output_path: CSV output path.
+
+    Returns:
+        Output DataFrame with predictions.
+    """
+    results_df = X_test.copy()
+    results_df["actual_sales_volume"] = y_test
+    results_df["predicted_sales_volume"] = y_pred.round(2)
+    results_df["residual"] = results_df["actual_sales_volume"] - results_df["predicted_sales_volume"]
+
+    results_df.to_csv(output_path, index=False)
+    logger.info("Saved predictions to: %s", output_path)
+
+    return results_df
+
+
+def plot_actual_vs_predicted(results_df: pd.DataFrame) -> None:
+    """
+    Plot actual vs predicted sales volume.
+
+    Args:
+        results_df: DataFrame containing actual and predicted values.
+    """
+    plt.figure(figsize=(7, 5))
+    plt.scatter(
+        results_df["actual_sales_volume"],
+        results_df["predicted_sales_volume"],
+        alpha=0.7,
+    )
+
+    min_value = min(
+        results_df["actual_sales_volume"].min(),
+        results_df["predicted_sales_volume"].min(),
+    )
+    max_value = max(
+        results_df["actual_sales_volume"].max(),
+        results_df["predicted_sales_volume"].max(),
+    )
+    plt.plot([min_value, max_value], [min_value, max_value], linestyle="--")
+
+    plt.title("Actual vs Predicted Sales Volume")
+    plt.xlabel("Actual Sales Volume")
+    plt.ylabel("Predicted Sales Volume")
+    plt.tight_layout()
+    plt.savefig(ACTUAL_VS_PREDICTED_PLOT_PATH)
+    plt.close()
+
+    logger.info("Saved actual vs predicted plot to: %s", ACTUAL_VS_PREDICTED_PLOT_PATH)
+
+
+def plot_residuals(results_df: pd.DataFrame) -> None:
+    """
+    Plot residuals against predicted values.
+
+    Args:
+        results_df: DataFrame containing predictions and residuals.
+    """
+    plt.figure(figsize=(7, 5))
+    plt.scatter(
+        results_df["predicted_sales_volume"],
+        results_df["residual"],
+        alpha=0.7,
+    )
+    plt.axhline(y=0, linestyle="--")
+
+    plt.title("Residual Plot")
+    plt.xlabel("Predicted Sales Volume")
+    plt.ylabel("Residual")
+    plt.tight_layout()
+    plt.savefig(RESIDUAL_PLOT_PATH)
+    plt.close()
+
+    logger.info("Saved residual plot to: %s", RESIDUAL_PLOT_PATH)
+
+
+def extract_feature_importance(
+    model_pipeline: Pipeline,
+    numeric_features: list[str],
+    categorical_features: list[str],
+) -> pd.DataFrame:
+    """
+    Extract feature importance from trained random forest model.
+
+    Args:
+        model_pipeline: Trained pipeline.
+        numeric_features: Numeric feature names.
+        categorical_features: Categorical feature names.
+
+    Returns:
+        Feature importance DataFrame.
+    """
+    preprocessor = model_pipeline.named_steps["preprocessor"]
+    model = model_pipeline.named_steps["model"]
+
+    encoded_feature_names = preprocessor.get_feature_names_out()
+    feature_importance_df = pd.DataFrame({
+        "feature": encoded_feature_names,
+        "importance": model.feature_importances_,
+    }).sort_values(by="importance", ascending=False)
+
+    return feature_importance_df
+
+
+def save_and_plot_feature_importance(feature_importance_df: pd.DataFrame) -> None:
+    """
+    Save feature importance to CSV and plot top features.
+
+    Args:
+        feature_importance_df: Feature importance DataFrame.
+    """
+    feature_importance_df.to_csv(FEATURE_IMPORTANCE_PATH, index=False)
+    logger.info("Saved feature importance to: %s", FEATURE_IMPORTANCE_PATH)
+
+    top_features = feature_importance_df.head(10).iloc[::-1]
+
+    plt.figure(figsize=(8, 5))
+    plt.barh(top_features["feature"], top_features["importance"])
+    plt.title("Top 10 Feature Importances (Random Forest)")
+    plt.xlabel("Importance")
+    plt.ylabel("Feature")
+    plt.tight_layout()
+    plt.savefig(FEATURE_IMPORTANCE_PLOT_PATH)
+    plt.close()
+
+    logger.info("Saved feature importance plot to: %s", FEATURE_IMPORTANCE_PLOT_PATH)
+
+
+def create_future_scenarios(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create realistic future business scenarios for demand forecasting.
+    These are not historical time points. They represent upcoming retail conditions.
+    """
+    median_price = df["price"].median()
+    common_position = df["product_position"].mode()[0]
+    common_terms = df["terms"].mode()[0]
+    common_material = df["material"].mode()[0]
+    common_origin = df["origin"].mode()[0]
+
+    scenarios = pd.DataFrame([
+        {
+            "scenario_name": "Spring promo - WOMAN",
+            "price": median_price,
+            "promotion_flag": 1,
+            "seasonal_flag": 1,
+            "product_position": common_position,
+            "terms": common_terms,
+            "section": "WOMAN",
+            "season": "Spring",
+            "material": common_material,
+            "origin": common_origin,
+        },
+        {
+            "scenario_name": "Summer no promo - MAN",
+            "price": median_price,
+            "promotion_flag": 0,
+            "seasonal_flag": 1,
+            "product_position": common_position,
+            "terms": common_terms,
+            "section": "MAN",
+            "season": "Summer",
+            "material": common_material,
+            "origin": common_origin,
+        },
+        {
+            "scenario_name": "Autumn promo - WOMAN",
+            "price": median_price,
+            "promotion_flag": 1,
+            "seasonal_flag": 1,
+            "product_position": common_position,
+            "terms": common_terms,
+            "section": "WOMAN",
+            "season": "Autumn",
+            "material": common_material,
+            "origin": common_origin,
+        },
+        {
+            "scenario_name": "Winter no promo - MAN",
+            "price": median_price,
+            "promotion_flag": 0,
+            "seasonal_flag": 1,
+            "product_position": common_position,
+            "terms": common_terms,
+            "section": "MAN",
+            "season": "Winter",
+            "material": common_material,
+            "origin": common_origin,
+        },
+    ])
+
+    return scenarios
+
+
+def save_future_forecasts(best_model: Pipeline, scenario_df: pd.DataFrame) -> pd.DataFrame:
+    forecast_input = scenario_df[FEATURE_COLUMNS].copy()
+    forecast_values = best_model.predict(forecast_input)
+
+    forecast_df = scenario_df.copy()
+    forecast_df["forecast_sales_volume"] = forecast_values.round(2)
+    forecast_df.to_csv(FUTURE_FORECAST_PATH, index=False)
+
+    return forecast_df
+
+
+def plot_future_forecasts(forecast_df: pd.DataFrame) -> None:
+    plt.figure(figsize=(9, 5))
+    plt.bar(forecast_df["scenario_name"], forecast_df["forecast_sales_volume"])
+    plt.title("Forecasted Demand for Future Retail Scenarios")
+    plt.xlabel("Scenario")
+    plt.ylabel("Forecast Sales Volume")
+    plt.xticks(rotation=20, ha="right")
+    plt.tight_layout()
+    plt.savefig(FORECAST_PLOT_PATH)
+    plt.close()
+
 
 def run_prediction_pipeline() -> None:
     """Execute full predictive modeling workflow."""
@@ -360,7 +587,23 @@ def run_prediction_pipeline() -> None:
         output_path=PREDICTIONS_PATH,
     )
 
-    
+    plot_actual_vs_predicted(results_df)
+    plot_residuals(results_df)
+
+    if best_model_name == "random_forest":
+        feature_importance_df = extract_feature_importance(
+            model_pipeline=best_model,
+            numeric_features=numeric_features,
+            categorical_features=categorical_features,
+        )
+        save_and_plot_feature_importance(feature_importance_df)
+
+    future_scenarios = create_future_scenarios(df)
+    forecast_df = save_future_forecasts(best_model, future_scenarios)
+    plot_future_forecasts(forecast_df)
+
+    logger.info("Demand forecasting pipeline completed successfully.")
+
 
 if __name__ == "__main__":
     try:
