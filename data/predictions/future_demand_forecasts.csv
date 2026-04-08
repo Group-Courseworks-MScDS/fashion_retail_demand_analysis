@@ -1,0 +1,5 @@
+scenario_name,price,promotion_flag,seasonal_flag,product_position,terms,section,season,material,origin,forecast_sales_volume
+Spring promo - WOMAN,35.95,1,1,Aisle,Jackets,WOMAN,Spring,Cotton,China,1403.05
+Summer no promo - MAN,35.95,0,1,Aisle,Jackets,MAN,Summer,Cotton,China,918.79
+Autumn promo - WOMAN,35.95,1,1,Aisle,Jackets,WOMAN,Autumn,Cotton,China,1403.31
+Winter no promo - MAN,35.95,0,1,Aisle,Jackets,MAN,Winter,Cotton,China,921.91
