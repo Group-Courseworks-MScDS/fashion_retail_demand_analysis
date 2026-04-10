@@ -20,6 +20,7 @@ from typing import Final
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from itertools import product
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
@@ -447,62 +448,37 @@ def create_future_scenarios(df: pd.DataFrame) -> pd.DataFrame:
     Create realistic future business scenarios for demand forecasting.
     These are not historical time points. They represent upcoming retail conditions.
     """
+    # Common values from dataset
     median_price = df["price"].median()
     common_position = df["product_position"].mode()[0]
     common_terms = df["terms"].mode()[0]
     common_material = df["material"].mode()[0]
     common_origin = df["origin"].mode()[0]
 
-    scenarios = pd.DataFrame([
-        {
-            "scenario_name": "Spring promo - WOMAN",
+    # Dimensions
+    seasons = ["Spring", "Summer", "Autumn", "Winter"]
+    sections = ["WOMAN", "MAN"]
+    promotions = [0, 1]  # 0 = No Promo, 1 = Promo
+
+    scenario_list = []
+
+    # Generate all combinations
+    for season, section, promo in product(seasons, sections, promotions):
+        scenario = {
+            "scenario_name": f"{season} {'promo' if promo == 1 else 'no promo'} - {section}",
             "price": median_price,
-            "promotion_flag": 1,
+            "promotion_flag": promo,
             "seasonal_flag": 1,
             "product_position": common_position,
             "terms": common_terms,
-            "section": "WOMAN",
-            "season": "Spring",
+            "section": section,
+            "season": season,
             "material": common_material,
             "origin": common_origin,
-        },
-        {
-            "scenario_name": "Summer no promo - MAN",
-            "price": median_price,
-            "promotion_flag": 0,
-            "seasonal_flag": 1,
-            "product_position": common_position,
-            "terms": common_terms,
-            "section": "MAN",
-            "season": "Summer",
-            "material": common_material,
-            "origin": common_origin,
-        },
-        {
-            "scenario_name": "Autumn promo - WOMAN",
-            "price": median_price,
-            "promotion_flag": 1,
-            "seasonal_flag": 1,
-            "product_position": common_position,
-            "terms": common_terms,
-            "section": "WOMAN",
-            "season": "Autumn",
-            "material": common_material,
-            "origin": common_origin,
-        },
-        {
-            "scenario_name": "Winter no promo - MAN",
-            "price": median_price,
-            "promotion_flag": 0,
-            "seasonal_flag": 1,
-            "product_position": common_position,
-            "terms": common_terms,
-            "section": "MAN",
-            "season": "Winter",
-            "material": common_material,
-            "origin": common_origin,
-        },
-    ])
+        }
+        scenario_list.append(scenario)
+
+    scenarios = pd.DataFrame(scenario_list)
 
     return scenarios
 
@@ -519,12 +495,45 @@ def save_future_forecasts(best_model: Pipeline, scenario_df: pd.DataFrame) -> pd
 
 
 def plot_future_forecasts(forecast_df: pd.DataFrame) -> None:
-    plt.figure(figsize=(9, 5))
-    plt.bar(forecast_df["scenario_name"], forecast_df["forecast_sales_volume"])
+    plt.figure(figsize=(12, 6))
+
+    colors = []
+    
+    for _, row in forecast_df.iterrows():
+        if row["promotion_flag"] == 1:
+            # Promo → green shades
+            if row["section"] == "WOMAN":
+                colors.append("#2ecc71")  # lighter green
+            else:
+                colors.append("#27ae60")  # darker green
+        else:
+            # No Promo → red/orange shades
+            if row["section"] == "WOMAN":
+                colors.append("#e67e22")  # orange
+            else:
+                colors.append("#e74c3c")  # red
+
+    plt.bar(
+        forecast_df["scenario_name"],
+        forecast_df["forecast_sales_volume"],
+        color=colors
+    )
+
     plt.title("Forecasted Demand for Future Retail Scenarios")
     plt.xlabel("Scenario")
     plt.ylabel("Forecast Sales Volume")
-    plt.xticks(rotation=20, ha="right")
+    plt.xticks(rotation=30, ha="right")
+
+    # Optional legend
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor="#2ecc71", label="Promo - WOMAN"),
+        Patch(facecolor="#27ae60", label="Promo - MAN"),
+        Patch(facecolor="#e67e22", label="No Promo - WOMAN"),
+        Patch(facecolor="#e74c3c", label="No Promo - MAN"),
+    ]
+    plt.legend(handles=legend_elements, loc="best")
+
     plt.tight_layout()
     plt.savefig(FORECAST_PLOT_PATH)
     plt.close()
